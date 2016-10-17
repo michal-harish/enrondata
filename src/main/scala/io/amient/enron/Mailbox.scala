@@ -28,10 +28,9 @@ class Mailbox(val zipFilePath: Path) {
 
   private val destDir: Path = Files.createTempDirectory(this.getClass.getSimpleName)
 
-  private var extracted = false
+  @volatile private var extracted: List[Email] = null
 
-  private def ensureExtracted() = if (!extracted) {
-    println(s"processing $zipFilePath ...")
+  private def extract() = {
     val entries = srcZipFile.entries()
     while (entries.hasMoreElements()) {
       val entry = entries.nextElement()
@@ -47,7 +46,6 @@ class Mailbox(val zipFilePath: Path) {
         out.close()
       }
     }
-    extracted = true
   }
 
   /**
@@ -55,52 +53,55 @@ class Mailbox(val zipFilePath: Path) {
     * @return (number of messages, number of words)
     */
   def emails: List[Email] = {
-    ensureExtracted()
-    val result = Files.walk(destDir, 1).iterator().asScala.toList.filter(xmlPathMatcher.matches).flatMap {
-      path =>
-        val documents = XML.loadFile(path.toFile) \ "Batch" \ "Documents" \ "Document"
-        val messages = documents filter (_ \@ "MimeType" == "message/rfc822")
+    if (extracted == null) {
+      println(s"processing $zipFilePath ...")
+      extract()
+      extracted = Files.walk(destDir, 1).iterator().asScala.toList.filter(xmlPathMatcher.matches).flatMap {
+        path =>
+          val documents = XML.loadFile(path.toFile) \ "Batch" \ "Documents" \ "Document"
+          val messages = documents filter (_ \@ "MimeType" == "message/rfc822")
 
-        messages.map { case message =>
+          messages.map { case message =>
 
-          val digest = MessageDigest.getInstance("MD5")
+            val digest = MessageDigest.getInstance("MD5")
 
-          val to = for (tag <- message \\ "Tag"; if (tag \@ "TagName" == "#To")) yield addresses(tag \@ "TagValue")
+            val to = for (tag <- message \\ "Tag"; if (tag \@ "TagName" == "#To")) yield addresses(tag \@ "TagValue")
 
-          val cc = for (tag <- message \\ "Tag"; if (tag \@ "TagName" == "#CC")) yield addresses(tag \@ "TagValue")
+            val cc = for (tag <- message \\ "Tag"; if (tag \@ "TagName" == "#CC")) yield addresses(tag \@ "TagValue")
 
-          var t = ""
-          val subjectWordCount = for {
-            tag <- message \\ "Tag"
-            if (tag \@ "TagName" == "#Subject")
-          } yield {
-            val text = tag \@ "TagValue"
-            t += text
-            digest.update(text.getBytes)
-            countWords(text)
+            var t = ""
+            val subjectWordCount = for {
+              tag <- message \\ "Tag"
+              if (tag \@ "TagName" == "#Subject")
+            } yield {
+              val text = tag \@ "TagValue"
+              t += text
+              digest.update(text.getBytes)
+              countWords(text)
+            }
+
+            val bodyWordCount = for {
+              file <- message \\ "File"
+              externalFile <- file \ "ExternalFile"
+              if file \@ "FileType" == "Text"
+            } yield {
+              val textFilePath = destDir + "/" + (externalFile \@ "FilePath") + "/" + (externalFile \@ "FileName")
+              val text = FileUtils.readFileToString(new File(textFilePath)).split("\n\r", 2)(1)
+              t += text
+              digest.update(text.getBytes)
+              countWords(text)
+            }
+
+            val messageWordCount = (subjectWordCount ++ bodyWordCount).sum
+            Email(ByteBuffer.wrap(digest.digest), messageWordCount, to.flatten.toSet, cc.flatten.toSet)
+          } filter {
+            _.to.size > 0
           }
-
-          val bodyWordCount = for {
-            file <- message \\ "File"
-            externalFile <- file \ "ExternalFile"
-            if file \@ "FileType" == "Text"
-          } yield {
-            val textFilePath = destDir + "/" + (externalFile \@ "FilePath") + "/" + (externalFile \@ "FileName")
-            val text = FileUtils.readFileToString(new File(textFilePath)).split("\n\r", 2)(1)
-            t += text
-            digest.update(text.getBytes)
-            countWords(text)
-          }
-
-          val messageWordCount = (subjectWordCount ++ bodyWordCount).sum
-          Email(ByteBuffer.wrap(digest.digest), messageWordCount, to.flatten.toSet, cc.flatten.toSet)
-        } filter {
-          _.to.size > 0
-        }
+      }
+      close()
+      println(s"completed $zipFilePath, num.emails: " + extracted.size)
     }
-    close()
-    println(s"completed $zipFilePath, num.emails: " + result.size)
-    result
+    extracted
   }
 
   private def countWords(text: String): Long = text.split("\\s+").length

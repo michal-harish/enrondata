@@ -34,8 +34,8 @@ class MailboxSpec extends FlatSpec with Matchers with BeforeAndAfterAll {
   }
 
   "Same message" should "appear in multiple mailboxes" in {
-    val m1 = mailbox1.emails.filter(_.to == Set("lindy.donoho@enron.com", "mary.darveaux@enron.com", "mary.kay.miller@enron.com")).next
-    val m2 = mailbox2.emails.filter(_.to == Set("lindy.donoho@enron.com", "mary.darveaux@enron.com", "mary.kay.miller@enron.com")).next
+    val m1 = mailbox1.emails.filter(_.to == Set("lindy.donoho@enron.com", "mary.darveaux@enron.com", "mary.kay.miller@enron.com")).head
+    val m2 = mailbox2.emails.filter(_.to == Set("lindy.donoho@enron.com", "mary.darveaux@enron.com", "mary.kay.miller@enron.com")).head
     m1 should equal(m2)
   }
 
