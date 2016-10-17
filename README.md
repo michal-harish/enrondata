@@ -54,7 +54,9 @@ are considered to be email messages.
 
 4. In word count, words are simply groups of characters separated by white-space.
 
-5. In word count, both email subject and email body are used.
+5. In word count, the text of the body includes the original messages in replies.
+
+6. In word count, both email subject and email body are used.
 
 # Running the code
 

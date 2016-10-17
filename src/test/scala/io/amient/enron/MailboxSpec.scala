@@ -16,8 +16,6 @@ class MailboxSpec extends FlatSpec with Matchers with BeforeAndAfterAll {
   val mailbox2 = new Mailbox(dataRootDirectory, "donoho-l")
 
   override def afterAll(): Unit = {
-    mailbox1.close()
-    mailbox2.close()
     super.afterAll()
   }
 

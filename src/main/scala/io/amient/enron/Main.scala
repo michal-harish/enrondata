@@ -10,26 +10,37 @@ import scala.collection.parallel.ForkJoinTaskSupport
   */
 object Main extends App {
 
+  //process arguments
   if (args.length != 1) {
     println("Usage: ./build/scripts/enronapp <DATA-LOCATION>\n\tDATA-LOCATION is the mount location of the Enron ESB snapshot")
     System.exit(1)
   }
   val dataDir = args(0)
+  val parallelism = 8
 
+  //parallelise mailbox processing
   val zipMailBoxMatcher = FileSystems.getDefault().getPathMatcher(s"glob:**/*_xml.zip")
-
   val mailboxes = Files.walk(Paths.get(dataDir)).iterator().asScala.toList.filter(zipMailBoxMatcher.matches).par
+  mailboxes.tasksupport = new ForkJoinTaskSupport(new scala.concurrent.forkjoin.ForkJoinPool(parallelism))
 
-  println(mailboxes.size)
+  //extract and deduplicate emails
+  val emails = mailboxes.flatMap(path => new Mailbox(path).emails).toSet.seq.toList
 
-  mailboxes.tasksupport = new ForkJoinTaskSupport(new scala.concurrent.forkjoin.ForkJoinPool(16))
+  //calculate stats
+  val avgWordCount = emails.map(_.wordCount).sum / emails.size
+  val top100 = emails.flatMap(email => email.to.map((_, 1.0)) ++ email.cc.map((_, 0.5)))
+    .groupBy(_._1).toList.map { case (email, weights) => (weights.map(_._2).sum, email) }
+    .sortBy(-_._1)
+    .take(100)
 
-  val emails = mailboxes.flatMap(path => new Mailbox(path).emails).toSet
-
-  println(emails.size)
-  //  mailboxes.foreach { z =>
-  //    println(z)
-  //  }
+  //print result
+  println("=============================================================================================")
+  println("Num. of mailboxes: " + mailboxes.size)
+  println("Parallelism: " + parallelism)
+  println("Total unique messages: " + emails.size)
+  println("Average num.of words per message: " + avgWordCount)
+  println("Top 100 recipients: ")
+  top100.foreach(println)
 
 
 }

@@ -30,24 +30,6 @@ class Mailbox(val zipFilePath: Path) {
 
   @volatile private var extracted: List[Email] = null
 
-  private def extract() = {
-    val entries = srcZipFile.entries()
-    while (entries.hasMoreElements()) {
-      val entry = entries.nextElement()
-      val entryDestination = new File(destDir.toString, entry.getName())
-      if (entry.isDirectory()) {
-        entryDestination.mkdirs()
-      } else {
-        entryDestination.getParentFile().mkdirs()
-        val in = srcZipFile.getInputStream(entry)
-        val out = new FileOutputStream(entryDestination)
-        IOUtils.copy(in, out)
-        IOUtils.closeQuietly(in)
-        out.close()
-      }
-    }
-  }
-
   /**
     *
     * @return (number of messages, number of words)
@@ -111,7 +93,25 @@ class Mailbox(val zipFilePath: Path) {
       m => m.group(1).toLowerCase()
   }.toList
 
-  def close(): Unit = {
+  private def extract() = {
+    val entries = srcZipFile.entries()
+    while (entries.hasMoreElements()) {
+      val entry = entries.nextElement()
+      val entryDestination = new File(destDir.toString, entry.getName())
+      if (entry.isDirectory()) {
+        entryDestination.mkdirs()
+      } else {
+        entryDestination.getParentFile().mkdirs()
+        val in = srcZipFile.getInputStream(entry)
+        val out = new FileOutputStream(entryDestination)
+        IOUtils.copy(in, out)
+        IOUtils.closeQuietly(in)
+        out.close()
+      }
+    }
+  }
+
+  private def close(): Unit = {
     try {
       srcZipFile.close()
     } finally {
