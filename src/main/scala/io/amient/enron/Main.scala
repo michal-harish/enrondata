@@ -43,7 +43,7 @@ object Main extends App {
     println("Top 100 recipients (above) ")
     println("Num. of mailboxes: " + mailboxes.size)
     println("Parallelism: " + parallelism)
-    println("Processing time: " + ((System.currentTimeMillis - startTime) / 6000000).toDouble / 100 + " minutes")
+    println("Processing time: " + ((System.currentTimeMillis - startTime) / 600).toDouble / 100 + " minutes")
     println("Total unique messages: " + emails.size)
     println("Average num.of words per message: " + avgWordCount)
 
