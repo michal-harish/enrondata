@@ -3,8 +3,8 @@
 User mharis exists on my AWS account with admin permissions and
 my aws credentials are in ~/.ssh/aws-us-east-micro.pem
 
-Create m4.4xlarge instance in us-east-1 where the Enron snapshot is located
-(this is a paid instance because the block storage exceeds 30Gb)
+Create m4.2xlarge instance with 24Gb disk in us-east-1 where the 
+Enron snapshot is located (this is a paid instance)
 
 
     > ssh -i ~/.ssh/aws-us-east-micro.pem ec2-user@ec2-54-237-177-250.compute-1.amazonaws.com

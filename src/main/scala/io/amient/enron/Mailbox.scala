@@ -54,9 +54,9 @@ class Mailbox(val zipFilePath: Path) {
     *
     * @return (number of messages, number of words)
     */
-  def emails: Iterator[Email] = {
+  def emails: List[Email] = {
     ensureExtracted()
-    Files.walk(destDir, 1).iterator().asScala.filter(xmlPathMatcher.matches).flatMap {
+    val result = Files.walk(destDir, 1).iterator().asScala.toList.filter(xmlPathMatcher.matches).flatMap {
       path =>
         val documents = XML.loadFile(path.toFile) \ "Batch" \ "Documents" \ "Document"
         val messages = documents filter (_ \@ "MimeType" == "message/rfc822")
@@ -98,6 +98,9 @@ class Mailbox(val zipFilePath: Path) {
           _.to.size > 0
         }
     }
+    close()
+    println(s"completed $zipFilePath, num.emails: " + result.size)
+    result
   }
 
   private def countWords(text: String): Long = text.split("\\s+").length
@@ -116,6 +119,7 @@ class Mailbox(val zipFilePath: Path) {
   }
 
   private def deleteDirectory(path: File) = if (path.exists()) {
+    println(s"freeing disk space: $path")
     def getRecursively(f: File): Seq[File] = f.listFiles.filter(_.isDirectory).flatMap(getRecursively) ++ f.listFiles
     getRecursively(path).foreach(f => if (!f.delete()) throw new RuntimeException("Failed to delete " + f.getAbsolutePath))
   }
