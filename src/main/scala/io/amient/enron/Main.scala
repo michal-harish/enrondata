@@ -36,12 +36,12 @@ object Main extends App {
 
   //print result
   println("=============================================================================================")
-  println("Top 100 recipients:")
+  println("Top 100 recipients (ascending ranking where the weight of regular recipient is 1.0 and cc = 0.5):")
   top100.reverse.foreach(println)
   println("Top 100 recipients (above) ")
   println("Num. of mailboxes: " + mailboxes.size)
   println("Parallelism: " + parallelism)
-  println("Processing time: " + (System.currentTimeMillis - startTime) / 1000 + " sec")
+  println("Processing time: " + math.round((System.currentTimeMillis - startTime) / 6000000).toDouble / 100 + " minutes")
   println("Total unique messages: " + emails.size)
   println("Average num.of words per message: " + avgWordCount)
 

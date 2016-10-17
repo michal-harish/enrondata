@@ -120,7 +120,6 @@ class Mailbox(val zipFilePath: Path) {
   }
 
   private def deleteDirectory(path: File) = if (path.exists()) {
-    println(s"freeing disk space: $path")
     def getRecursively(f: File): Seq[File] = f.listFiles.filter(_.isDirectory).flatMap(getRecursively) ++ f.listFiles
     getRecursively(path).foreach(f => if (!f.delete()) throw new RuntimeException("Failed to delete " + f.getAbsolutePath))
   }
