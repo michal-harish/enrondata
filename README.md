@@ -55,7 +55,8 @@ Clone the code base on the EC2 instance and build using provided gradle wrapper:
     > cd enrondata 
     > ./gradlew build
 
-Run the application using the generated script passing data mount location 
+Run the application using the generated script passing the parallelism 
+(16 is good for m4.2xlarge instance) and the data mount location: 
  
     > sudo ./build/scripts/enronapp 16 /data
 

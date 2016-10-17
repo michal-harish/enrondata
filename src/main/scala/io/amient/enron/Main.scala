@@ -4,6 +4,7 @@ import java.io.File
 import java.nio.file.{FileSystems, Paths}
 
 import scala.collection.parallel.ForkJoinTaskSupport
+import scala.collection.parallel.immutable.ParSet
 import scala.util.control.NonFatal
 
 /**
@@ -25,9 +26,10 @@ object Main extends App {
     mailboxes.tasksupport = new ForkJoinTaskSupport(new scala.concurrent.forkjoin.ForkJoinPool(parallelism))
 
     //extract and deduplicate emails
-    val emails = mailboxes.flatMap(path => new Mailbox(path).emails).toSet.seq.toList
+    val emails: ParSet[Email] = mailboxes.flatMap(path => new Mailbox(path).emails).toSet
 
     //calculate stats
+    println("calculating stats...")
     val avgWordCount = emails.map(_.wordCount).sum / emails.size
     val top100 = emails.flatMap(email => email.to.map((_, 1.0)) ++ email.cc.map((_, 0.5)))
       .groupBy(_._1).toList.map { case (email, weights) => (weights.map(_._2).sum, email) }
