@@ -104,11 +104,16 @@ class Mailbox(val zipFilePath: Path) {
         if (!entry.isDirectory()) {
           val in = srcZipFile.getInputStream(entry)
           val out = new ByteArrayOutputStream(1024)
-          IOUtils.copy(in, out)
-          IOUtils.closeQuietly(in)
-          out.flush()
-          zipCache.put(Paths.get(entryDestination.toString), out.toByteArray)
-          out.close()
+          try {
+            IOUtils.copy(in, out)
+            IOUtils.closeQuietly(in)
+            out.flush()
+            zipCache.put(Paths.get(entryDestination.toString), out.toByteArray)
+          } catch {
+            case e: java.util.zip.ZipException => println("Invalid zip file: " + entry.getName())
+          } finally {
+            out.close()
+          }
         }
       }
     }
