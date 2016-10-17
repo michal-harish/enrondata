@@ -12,8 +12,9 @@ import scala.util.control.NonFatal
   */
 object Main extends App {
 
-  //process arguments
   try {
+
+    //process arguments
     if (args.length != 2) throw new IllegalArgumentException
     val parallelism = args(0).toInt
     val dataDir = args(1)

@@ -24,8 +24,8 @@ are considered to be email messages.
 User mharis exists on my AWS account with admin permissions and
 my aws credentials are in ~/.ssh/aws-us-east-micro.pem
 
-Create m4.2xlarge instance with 8Gb magnetic or gp disk in us-east-1 
-where the Enron snapshot is located (this is a paid instance)
+Create m4.xlarge instance (4 CPUs with 16 Gib RAM) with 8Gb magnetic 
+or gp disk in us-east-1  where the Enron snapshot is located.
 
 The program uses in-memory unzip mechanism so doesn't require any
  special root disk. The ESB mount of the Enron data should be ideally
@@ -56,9 +56,9 @@ Clone the code base on the EC2 instance and build using provided gradle wrapper:
     > ./gradlew build
 
 Run the application using the generated script passing the parallelism 
-(6 is the highest possible for m4.2xlarge instance) and the data mount location: 
+(4 is optimal for m4.xlarge instance) and the data mount location: 
  
-    > sudo ./build/scripts/enronapp 6 /data
+    > sudo ./build/scripts/enronapp 4 /data
 
 
         
