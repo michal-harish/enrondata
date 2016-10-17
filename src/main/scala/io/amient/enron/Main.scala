@@ -3,6 +3,7 @@ package io.amient.enron
 import java.nio.file.{FileSystems, Files, Paths}
 
 import scala.collection.JavaConverters._
+import scala.collection.parallel.ForkJoinTaskSupport
 
 /**
   * Created by mharis on 17/10/2016.
@@ -17,9 +18,13 @@ object Main extends App {
 
   val zipMailBoxMatcher = FileSystems.getDefault().getPathMatcher(s"glob:**/*_xml.zip")
 
-  val mailboxes = Files.walk(Paths.get(dataDir)).iterator().asScala.toList.filter(zipMailBoxMatcher.matches)
+  val mailboxes = Files.walk(Paths.get(dataDir)).iterator().asScala.toList.filter(zipMailBoxMatcher.matches).par
 
-  val emails = mailboxes.par.flatMap(path => new Mailbox(path).emails).toSet
+  println(mailboxes.size)
+
+  mailboxes.tasksupport = new ForkJoinTaskSupport(new scala.concurrent.forkjoin.ForkJoinPool(32))
+
+  val emails = mailboxes.flatMap(path => new Mailbox(path).emails).toSet
 
   println(emails.size)
   //  mailboxes.foreach { z =>
