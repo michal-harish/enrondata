@@ -3,7 +3,7 @@
 User mharis exists on my AWS account with admin permissions and
 my aws credentials are in ~/.ssh/aws-us-east-micro.pem
 
-Create instance in us-east-1 where the Enron snapshot is located
+Create m4.4xlarge instance in us-east-1 where the Enron snapshot is located
 (this is a paid instance because the block storage exceeds 30Gb)
 
 
@@ -60,13 +60,13 @@ are considered to be email messages.
 
 Clone the code base on the EC2 instance and build using provided gradle wrapper:
 
-    > git@github.com:michal-harish/enrondata.git
+    > git clone https://github.com/michal-harish/enrondata.git
     > cd enrondata 
     > ./gradlew build
 
 Run the application using the generated script passing data mount location 
  
-    > ./build/scripts/enronapp /data
+    > sudo ./build/scripts/enronapp /data
 
 
         

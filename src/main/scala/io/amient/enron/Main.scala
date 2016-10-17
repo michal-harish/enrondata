@@ -22,7 +22,7 @@ object Main extends App {
 
   println(mailboxes.size)
 
-  mailboxes.tasksupport = new ForkJoinTaskSupport(new scala.concurrent.forkjoin.ForkJoinPool(32))
+  mailboxes.tasksupport = new ForkJoinTaskSupport(new scala.concurrent.forkjoin.ForkJoinPool(16))
 
   val emails = mailboxes.flatMap(path => new Mailbox(path).emails).toSet
 

@@ -31,7 +31,7 @@ class Mailbox(val zipFilePath: Path) {
   private var extracted = false
 
   private def ensureExtracted() = if (!extracted) {
-    println("!!!!")
+    println(s"processing $zipFilePath ...")
     val entries = srcZipFile.entries()
     while (entries.hasMoreElements()) {
       val entry = entries.nextElement()
