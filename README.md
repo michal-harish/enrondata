@@ -1,4 +1,25 @@
-# EC2 Setup 
+# Assumptions
+
+1. Each mailbox is represented by a single zip file, either in PST or XML.
+As only version 2 of the dataset contains XML, we'll use that.
+
+2. Same message may appear in multiple mailboxes, i.e.
+all recipients and sender's mailbox. Without any deduplication, messages
+sent to multiple recipients would skew the the average word count 
+as well as top-N recipient ranking. A simple message digest and
+word count comparison will be used to deduplicate these messages. 
+
+3. In the underlying xml format only documents with MimeType="message/.." 
+are considered to be email messages.
+
+4. In word count, words are simply groups of characters separated by white-space.
+
+5. In word count, the text of the body includes the original messages in replies.
+
+6. In word count, both email subject and email body are used.
+
+
+# EC2 Instance Setup 
 
 User mharis exists on my AWS account with admin permissions and
 my aws credentials are in ~/.ssh/aws-us-east-micro.pem
@@ -23,42 +44,8 @@ Enron snapshot is located (this is a paid instance)
     sudo yum install java-1.8.0
     sudo yum remove java-1.7.0-openjdk
 
-# Data Structure
 
-## Sample XML
-
-file:///Users/mharis/git/aws-test/data/zl_harris-s_692_NOFN_000.xml
-
-## Directory structure
-    /data/edrm-enron-v1
-    /data/edrm-enron-v2
-        edrm-enron-v2_<*SURNAME-?INITIAL>_xml.zip
-            native_???/... <-+
-            text_???/...     |
-            zl_*.xml  -------+
-        
-        
-# Assumptions
-
-1. Each mailbox is represented by a single zip file, either in PST or XML.
-As only version 2 of the dataset contains XML, we'll use that.
-
-2. Same message may appear in multiple mailboxes, i.e.
-all recipients and sender's mailbox. Without any deduplication, messages
-sent to multiple recipients would skew the the average word count 
-as well as top-N recipient ranking. A simple message digest and
-word count comparison will be used to deduplicate these messages. 
-
-3. In the underlying xml format only documents with MimeType="message/.." 
-are considered to be email messages.
-
-4. In word count, words are simply groups of characters separated by white-space.
-
-5. In word count, the text of the body includes the original messages in replies.
-
-6. In word count, both email subject and email body are used.
-
-# Running the code
+# Running the program
 
 Clone the code base on the EC2 instance and build using provided gradle wrapper:
 

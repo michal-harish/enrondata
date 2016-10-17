@@ -17,6 +17,7 @@ object Main extends App {
   }
   val dataDir = args(0)
   val parallelism = 8
+  val startTime = System.currentTimeMillis
 
   //parallelise mailbox processing
   val zipMailBoxMatcher = FileSystems.getDefault().getPathMatcher(s"glob:**/*_xml.zip")
@@ -35,12 +36,14 @@ object Main extends App {
 
   //print result
   println("=============================================================================================")
+  println("Top 100 recipients:")
+  top100.reverse.foreach(println)
+  println("Top 100 recipients (above) ")
   println("Num. of mailboxes: " + mailboxes.size)
   println("Parallelism: " + parallelism)
+  println("Processing time: " + (System.currentTimeMillis - startTime) / 1000 + " sec")
   println("Total unique messages: " + emails.size)
   println("Average num.of words per message: " + avgWordCount)
-  println("Top 100 recipients: ")
-  top100.foreach(println)
 
 
 }
