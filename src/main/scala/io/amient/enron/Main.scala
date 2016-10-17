@@ -27,7 +27,7 @@ object Main extends App {
     mailboxes.tasksupport = new ForkJoinTaskSupport(new scala.concurrent.forkjoin.ForkJoinPool(parallelism))
 
     //extract and deduplicate emails
-    val emails: ParSet[Email] = mailboxes.flatMap(path => new Mailbox(path).emails).toSet
+    val emails = mailboxes.flatMap(path => new Mailbox(path).emails).toSet.toList
 
     //calculate stats
     println("calculating stats...")

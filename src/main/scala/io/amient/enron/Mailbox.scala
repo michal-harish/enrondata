@@ -12,9 +12,19 @@ import scala.xml.XML
 
 /**
   * Created by mharis on 17/10/2016.
+  *
+  * @param digest hash of the message text for deduplication
+  * @param wordCount number of words in the email
+  * @param to regular recipients
+  * @param cc cc recipients
   */
 case class Email(digest: ByteBuffer, wordCount: Long, to: Set[String], cc: Set[String])
 
+
+/**
+  * A Mailbox Processor for enron v2 XML format
+  * @param zipFilePath
+  */
 class Mailbox(val zipFilePath: Path) {
 
   def this(dataRootPath: Path, mailboxName: String) = {
@@ -27,73 +37,11 @@ class Mailbox(val zipFilePath: Path) {
 
   private val destDir: Path = Files.createTempDirectory(this.getClass.getSimpleName)
 
-  @volatile private var extracted: List[Email] = null
+  private val emailAddressPattern = "(([a-zA-Z0-9_\\-\\.]+)@([a-zA-Z0-9\\-\\.]+))".r
 
-  /**
-    *
-    * @return (number of messages, number of words)
-    */
-  def emails: List[Email] = {
-    if (extracted == null) {
-      println(s"processing $zipFilePath ...")
-      extract()
-      extracted = zipCache.toList.filter(x => xmlPathMatcher.matches(x._1)).flatMap { case (path, data) =>
-        val xml = XML.load(new ByteArrayInputStream(data))
-        val documents = xml \ "Batch" \ "Documents" \ "Document"
-        val messages = documents filter (_ \@ "MimeType" == "message/rfc822")
+  private val zipCache = scala.collection.mutable.Map[Path, Array[Byte]]()
 
-        messages.map { case message =>
-
-          val digest = MessageDigest.getInstance("MD5")
-
-          val to = for (tag <- message \\ "Tag"; if (tag \@ "TagName" == "#To")) yield addresses(tag \@ "TagValue")
-
-          val cc = for (tag <- message \\ "Tag"; if (tag \@ "TagName" == "#CC")) yield addresses(tag \@ "TagValue")
-
-          var t = ""
-          val subjectWordCount = for {
-            tag <- message \\ "Tag"
-            if (tag \@ "TagName" == "#Subject")
-          } yield {
-            val text = tag \@ "TagValue"
-            t += text
-            digest.update(text.getBytes)
-            countWords(text)
-          }
-
-          val bodyWordCount = for {
-            file <- message \\ "File"
-            externalFile <- file \ "ExternalFile"
-            if file \@ "FileType" == "Text"
-          } yield {
-            val textFilePath = destDir + "/" + (externalFile \@ "FilePath") + "/" + (externalFile \@ "FileName")
-            val text = new String(zipCache(Paths.get(textFilePath))).split("\n\r", 2)(1)
-            t += text
-            digest.update(text.getBytes)
-            countWords(text)
-          }
-
-          val messageWordCount = (subjectWordCount ++ bodyWordCount).sum
-          Email(ByteBuffer.wrap(digest.digest), messageWordCount, to.flatten.toSet, cc.flatten.toSet)
-        } filter {
-          _.to.size > 0
-        }
-      }
-      close()
-      println(s"completed $zipFilePath, num.emails: " + extracted.size)
-    }
-    extracted
-  }
-
-  private def countWords(text: String): Long = text.split("\\s+").length
-
-  val emailAddressPattern = "(([a-zA-Z0-9_\\-\\.]+)@([a-zA-Z0-9\\-\\.]+))".r
-
-  def addresses(recipients: String): List[String] = emailAddressPattern.findAllIn(recipients).matchData.map {
-    m => m.group(1).toLowerCase()
-  }.toList
-
-  var zipCache = scala.collection.mutable.Map[Path, Array[Byte]]()
+  @volatile private var data: List[Email] = null
 
   private def extract() = {
     val entries = srcZipFile.entries()
@@ -127,9 +75,63 @@ class Mailbox(val zipFilePath: Path) {
     }
   }
 
-  private def deleteDirectory(path: File) = if (path.exists()) {
-    def getRecursively(f: File): Seq[File] = f.listFiles.filter(_.isDirectory).flatMap(getRecursively) ++ f.listFiles
-    getRecursively(path).foreach(f => if (!f.delete()) throw new RuntimeException("Failed to delete " + f.getAbsolutePath))
+  def countWords(text: String): Long = text.split("\\s+").length
+
+  def addresses(recipients: String): List[String] = {
+    emailAddressPattern.findAllIn(recipients).matchData.map {
+      m => m.group(1).toLowerCase()
+    }.toList
   }
+
+  /**
+    * @return a List of Email objects extracted from the zip archive
+    */
+  def emails: List[Email] = {
+    if (data == null) {
+      println(s"processing $zipFilePath ...")
+      extract()
+      data = zipCache.toList.filter(x => xmlPathMatcher.matches(x._1)).flatMap { case (path, data) =>
+        val xml = XML.load(new ByteArrayInputStream(data))
+        val documents = xml \ "Batch" \ "Documents" \ "Document"
+        val messages = documents filter (_ \@ "MimeType" == "message/rfc822")
+
+        messages.map { case message =>
+
+          val to = for (tag <- message \\ "Tag"; if (tag \@ "TagName" == "#To")) yield addresses(tag \@ "TagValue")
+          val cc = for (tag <- message \\ "Tag"; if (tag \@ "TagName" == "#CC")) yield addresses(tag \@ "TagValue")
+          val digest = MessageDigest.getInstance("MD5")
+          val subjectWordCount = for {
+            tag <- message \\ "Tag"
+            if (tag \@ "TagName" == "#Subject")
+          } yield {
+            val text = tag \@ "TagValue"
+            digest.update(text.getBytes)
+            countWords(text)
+          }
+
+          val bodyWordCount = for {
+            file <- message \\ "File"
+            externalFile <- file \ "ExternalFile"
+            if file \@ "FileType" == "Text"
+          } yield {
+            val textFilePath = destDir + "/" + (externalFile \@ "FilePath") + "/" + (externalFile \@ "FileName")
+            val text = new String(zipCache(Paths.get(textFilePath))).split("\n\r", 2)(1)
+            digest.update(text.getBytes)
+            countWords(text)
+          }
+
+          val messageWordCount = (subjectWordCount ++ bodyWordCount).sum
+          Email(ByteBuffer.wrap(digest.digest), messageWordCount, to.flatten.toSet, cc.flatten.toSet)
+        } filter {
+          _.to.size > 0
+        }
+      }
+      close()
+      println(s"completed $zipFilePath, num.emails: " + data.size)
+    }
+    data
+  }
+
+
 
 }
