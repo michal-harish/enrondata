@@ -1,8 +1,8 @@
 package io.amient.enron
 
-import java.nio.file.{FileSystems, Files, Paths}
+import java.io.File
+import java.nio.file.{FileSystems, Paths}
 
-import scala.collection.JavaConverters._
 import scala.collection.parallel.ForkJoinTaskSupport
 
 /**
@@ -20,8 +20,9 @@ object Main extends App {
   val startTime = System.currentTimeMillis
 
   //parallelise mailbox processing
+  val dataFiles = new File(dataDir, "edrm-enron-v2").listFiles().toList.map(_.toString).map(Paths.get(_))
   val zipMailBoxMatcher = FileSystems.getDefault().getPathMatcher(s"glob:**/*_xml.zip")
-  val mailboxes = Files.walk(Paths.get(dataDir)).iterator().asScala.toList.filter(zipMailBoxMatcher.matches).par
+  val mailboxes = dataFiles.filter(zipMailBoxMatcher.matches).par
   mailboxes.tasksupport = new ForkJoinTaskSupport(new scala.concurrent.forkjoin.ForkJoinPool(parallelism))
 
   //extract and deduplicate emails

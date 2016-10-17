@@ -43,9 +43,8 @@ The program uses in-memory unzip mechanism so doesn't require any
     sudo mkdir /data
     sudo mount /dev/xvdb /data
 
-    #replace java7 with java8
-    sudo yum install git
-    sudo yum install java-1.8.0 && sudo yum remove java-1.7.0-openjdk
+    #install git
+    sudo yum install git    
 
 
 # Running the program
