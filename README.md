@@ -57,7 +57,7 @@ Clone the code base on the EC2 instance and build using provided gradle wrapper:
 
 Run the application using the generated script passing data mount location 
  
-    > sudo ./build/scripts/enronapp /data
+    > sudo ./build/scripts/enronapp 16 /data
 
 
         
