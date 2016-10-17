@@ -24,8 +24,12 @@ are considered to be email messages.
 User mharis exists on my AWS account with admin permissions and
 my aws credentials are in ~/.ssh/aws-us-east-micro.pem
 
-Create m4.2xlarge instance with 24Gb disk in us-east-1 where the 
-Enron snapshot is located (this is a paid instance)
+Create m4.2xlarge instance with 8Gb magnetic or gp disk in us-east-1 
+where the Enron snapshot is located (this is a paid instance)
+
+The program uses in-memory unzip mechanism so doesn't require any
+ special root disk. The ESB mount of the Enron data should be ideally
+ throughput optimised.
 
 
     > ssh -i ~/.ssh/aws-us-east-micro.pem ec2-user@ec2-54-237-177-250.compute-1.amazonaws.com
@@ -41,8 +45,7 @@ Enron snapshot is located (this is a paid instance)
 
     #replace java7 with java8
     sudo yum install git
-    sudo yum install java-1.8.0
-    sudo yum remove java-1.7.0-openjdk
+    sudo yum install java-1.8.0 && sudo yum remove java-1.7.0-openjdk
 
 
 # Running the program
